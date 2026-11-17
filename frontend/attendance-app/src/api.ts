@@ -1,6 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
 export const ASSET_BASE_URL = import.meta.env.VITE_ASSET_BASE_URL ?? 'http://localhost:3000';
-export const COMPANY_NAME = import.meta.env.VITE_COMPANY_NAME ?? 'PT Kerja Mandiri';
+export const COMPANY_NAME = import.meta.env.VITE_COMPANY_NAME ?? 'KerjaWFH';
 
 export type Role = 'EMPLOYEE' | 'HRD_ADMIN';
 export type EmployeeStatus = 'ACTIVE' | 'INACTIVE';

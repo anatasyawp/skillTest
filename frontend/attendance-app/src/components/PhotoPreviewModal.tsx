@@ -25,20 +25,20 @@ export function PhotoPreviewModal({ photoUrl, onClose }: PhotoPreviewModalProps)
       role="dialog"
       aria-modal="true"
       aria-label="Pratinjau Foto Bukti WFH"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/60 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#3A0B07]/70 p-4"
       onClick={onClose}
     >
       <div
-        className="relative max-w-2xl w-full bg-white rounded-xl border border-[#CBD5E1] p-3 shadow-lg"
+        className="relative max-w-2xl w-full bg-white rounded-lg border border-[#D2BBAE] p-3 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#E2E8F0]">
-          <span className="text-sm font-semibold text-[#0F172A]">Foto Bukti WFH</span>
+        <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#EADCD3]">
+          <span className="text-sm font-semibold text-[#3A0B07]">Foto Bukti WFH</span>
           <button
             type="button"
             onClick={onClose}
             aria-label="Tutup pratinjau foto"
-            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg hover:bg-[#F8FAFC] text-[#475569] cursor-pointer"
+            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-md hover:bg-[#FAF6F3] text-[#6E4A3E] cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -46,7 +46,7 @@ export function PhotoPreviewModal({ photoUrl, onClose }: PhotoPreviewModalProps)
         <img
           src={photoUrl}
           alt="Bukti WFH"
-          className="w-full max-h-[75vh] object-contain rounded-lg bg-[#F8FAFC]"
+          className="w-full max-h-[75vh] object-contain rounded-md bg-[#FAF6F3]"
         />
       </div>
     </div>

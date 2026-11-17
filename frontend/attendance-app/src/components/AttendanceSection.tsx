@@ -142,11 +142,11 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
   return (
     <div className="space-y-6">
       {/* Today's Check-In Zone */}
-      <section className="bg-white border border-[#CBD5E1] rounded-xl p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4 pb-5 border-b border-[#E2E8F0]">
+      <section className="bg-white border border-[#D2BBAE] rounded-xl overflow-hidden shadow-xs">
+        <div className="bg-gradient-to-r from-[#3A0B07] via-[#7E2908] to-[#9A3409] text-white px-5 sm:px-6 py-5 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-base font-bold text-[#0F172A]">Kehadiran Hari Ini</h2>
-            <p className="text-sm text-[#475569] mt-0.5">
+            <h2 className="text-lg font-bold text-white">Kehadiran Hari Ini</h2>
+            <p className="text-sm text-[#EADCD3] mt-0.5">
               {now.toLocaleDateString('id-ID', {
                 weekday: 'long',
                 day: '2-digit',
@@ -155,9 +155,9 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
               })}
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-2">
-            <Clock className="w-4 h-4 text-[#0F766E]" />
-            <span className="font-mono-tabular text-lg font-semibold text-[#0F172A]">
+          <div className="flex items-center gap-2 rounded-lg bg-[#EC8C0E] px-4 py-2 text-[#3A0B07] shadow-xs">
+            <Clock className="w-4 h-4 text-[#3A0B07]" />
+            <span className="font-mono-tabular text-lg font-bold">
               {now.toLocaleTimeString('id-ID', {
                 hour: '2-digit',
                 minute: '2-digit',
@@ -168,13 +168,15 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
           </div>
         </div>
 
+        <div className="p-5 sm:p-6">
+
         {todayLoading ? (
-          <div className="py-8 flex items-center gap-3 text-sm text-[#475569]">
-            <RefreshCw className="w-4 h-4 animate-spin text-[#0F766E]" />
+          <div className="py-8 flex items-center gap-3 text-sm text-[#6E4A3E]">
+            <RefreshCw className="w-4 h-4 animate-spin text-[#D1510A]" />
             <span>Memuat status absensi hari ini...</span>
           </div>
         ) : todayError ? (
-          <div className="mt-5 rounded-lg border border-[#FECACA] bg-[#FEF2F2] p-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="mt-5 rounded-md border border-[#FECACA] bg-[#FEF2F2] p-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 text-sm text-[#B91C1C]">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{todayError}</span>
@@ -182,7 +184,7 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
             <button
               type="button"
               onClick={loadTodayStatus}
-              className="min-h-[44px] px-3.5 rounded-lg border border-[#FECACA] bg-white text-sm font-medium text-[#B91C1C] hover:bg-[#FEF2F2] cursor-pointer"
+              className="min-h-[44px] px-3.5 rounded-md border border-[#FECACA] bg-white text-sm font-medium text-[#B91C1C] hover:bg-[#FEF2F2] cursor-pointer"
             >
               Coba Lagi
             </button>
@@ -190,19 +192,19 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
         ) : todayStatus?.hasClockedIn && todayStatus.attendance ? (
           <div className="mt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
             <div className="space-y-2.5">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#ECFDF5] px-3 py-1 text-xs font-semibold text-[#047857]">
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-[#F0FDF4] border border-[#BBF7D0] px-3 py-1 text-xs font-semibold text-[#15803D]">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 Sudah Absen Masuk WFH
               </span>
-              <div className="text-sm text-[#475569]">
+              <div className="text-sm text-[#6E4A3E]">
                 Waktu Check-In:{' '}
-                <span className="font-mono-tabular font-semibold text-[#0F172A]">
+                <span className="font-mono-tabular font-semibold text-[#3A0B07]">
                   {formatTimeId(todayStatus.attendance.clockInAt)}
                 </span>
               </div>
               {todayStatus.attendance.notes && (
-                <p className="text-sm text-[#475569]">
-                  Catatan: <span className="text-[#0F172A]">{todayStatus.attendance.notes}</span>
+                <p className="text-sm text-[#6E4A3E]">
+                  Catatan: <span className="text-[#3A0B07]">{todayStatus.attendance.notes}</span>
                 </p>
               )}
             </div>
@@ -212,7 +214,7 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
               onClick={() =>
                 onPreviewPhoto(`${ASSET_BASE_URL}${todayStatus.attendance!.photoUrl}`)
               }
-              className="group relative w-32 h-24 rounded-lg overflow-hidden border border-[#CBD5E1] shrink-0 cursor-pointer"
+              className="group relative w-32 h-24 rounded-md overflow-hidden border border-[#D2BBAE] shrink-0 cursor-pointer"
               aria-label="Lihat foto bukti WFH hari ini"
             >
               <img
@@ -227,7 +229,7 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
             {submitError && (
               <div
                 role="alert"
-                className="flex items-start gap-2.5 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3.5 py-3 text-sm text-[#B91C1C]"
+                className="flex items-start gap-2.5 rounded-md border border-[#FECACA] bg-[#FEF2F2] px-3.5 py-3 text-sm text-[#B91C1C]"
               >
                 <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                 <span>{submitError}</span>
@@ -237,7 +239,7 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
             {submitSuccess && (
               <div
                 role="status"
-                className="flex items-start gap-2.5 rounded-lg border border-[#A7F3D0] bg-[#ECFDF5] px-3.5 py-3 text-sm text-[#047857]"
+                className="flex items-start gap-2.5 rounded-md border border-[#BBF7D0] bg-[#F0FDF4] px-3.5 py-3 text-sm text-[#15803D]"
               >
                 <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
                 <span>{submitSuccess}</span>
@@ -245,22 +247,22 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">
-                Foto Bukti WFH <span className="text-[#B91C1C]">*</span>
+              <label className="block text-sm font-medium text-[#3A0B07] mb-1.5">
+                Foto Bukti WFH <span className="text-[#D1510A]">*</span>
               </label>
               {photoPreview ? (
                 <div className="flex flex-wrap items-center gap-4">
                   <img
                     src={photoPreview}
                     alt="Pratinjau foto WFH"
-                    className="w-40 h-28 object-cover rounded-lg border border-[#CBD5E1]"
+                    className="w-40 h-28 object-cover rounded-md border border-[#D2BBAE]"
                   />
                   <div className="space-y-2">
-                    <p className="text-xs text-[#475569]">{photoFile?.name}</p>
+                    <p className="text-xs text-[#6E4A3E]">{photoFile?.name}</p>
                     <button
                       type="button"
                       onClick={() => handleFileChange(null)}
-                      className="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-lg border border-[#CBD5E1] bg-white hover:bg-[#F8FAFC] text-xs font-medium text-[#0F172A] cursor-pointer"
+                      className="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-md border border-[#D2BBAE] bg-white hover:bg-[#FAF6F3] text-xs font-medium text-[#3A0B07] cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                       Ganti Foto
@@ -268,12 +270,12 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
                   </div>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center min-h-[132px] rounded-lg border border-dashed border-[#CBD5E1] bg-[#F8FAFC] hover:border-[#0F766E] px-4 py-5 text-center cursor-pointer transition-colors duration-150">
-                  <Camera className="w-6 h-6 text-[#0F766E] mb-2" />
-                  <span className="text-sm font-medium text-[#0F172A]">
+                <label className="flex flex-col items-center justify-center min-h-[132px] rounded-md border border-dashed border-[#D2BBAE] bg-[#FAF6F3] hover:border-[#D1510A] px-4 py-5 text-center cursor-pointer transition-colors duration-150">
+                  <Camera className="w-6 h-6 text-[#D1510A] mb-2" />
+                  <span className="text-sm font-medium text-[#3A0B07]">
                     Pilih atau ambil foto bukti WFH
                   </span>
-                  <span className="text-xs text-[#475569] mt-1">
+                  <span className="text-xs text-[#6E4A3E] mt-1">
                     JPG, PNG, atau WEBP · Maksimal 5 MB
                   </span>
                   <input
@@ -287,7 +289,7 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
             </div>
 
             <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-[#0F172A] mb-1.5">
+              <label htmlFor="notes" className="block text-sm font-medium text-[#3A0B07] mb-1.5">
                 Catatan Aktivitas (Opsional)
               </label>
               <textarea
@@ -296,7 +298,7 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Contoh: Fokus menyelesaikan modul API & review PR."
-                className="w-full rounded-lg border border-[#CBD5E1] bg-white px-3.5 py-2.5 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:border-[#0F766E] focus:outline-none"
+                className="w-full rounded-md border border-[#D2BBAE] bg-white px-3.5 py-2.5 text-sm text-[#3A0B07] placeholder:text-[#A68B7E] focus:border-[#D1510A] focus:outline-none"
               />
             </div>
 
@@ -304,7 +306,7 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-lg bg-[#0F766E] hover:bg-[#115E59] disabled:opacity-60 text-white text-sm font-semibold transition-colors duration-150 cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-md bg-gradient-to-r from-[#7E2908] to-[#9A3409] hover:from-[#3A0B07] hover:to-[#7E2908] disabled:opacity-60 text-white text-sm font-semibold shadow-xs transition-all duration-150 cursor-pointer"
               >
                 <Upload className="w-4 h-4" />
                 <span>{submitting ? 'Mengirim Absensi...' : 'Absen Masuk WFH'}</span>
@@ -312,21 +314,22 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
             </div>
           </form>
         )}
+        </div>
       </section>
 
       {/* Attendance History */}
-      <section className="bg-white border border-[#CBD5E1] rounded-xl p-5 sm:p-6">
-        <div className="flex flex-wrap items-end justify-between gap-4 pb-4 border-b border-[#E2E8F0]">
+      <section className="bg-white border border-[#D2BBAE] rounded-lg p-5 sm:p-6">
+        <div className="flex flex-wrap items-end justify-between gap-4 pb-4 border-b border-[#EADCD3]">
           <div>
-            <h2 className="text-base font-bold text-[#0F172A]">Riwayat Absensi Saya</h2>
-            <p className="text-sm text-[#475569] mt-0.5">
+            <h2 className="text-base font-bold text-[#3A0B07]">Riwayat Absensi Saya</h2>
+            <p className="text-sm text-[#6E4A3E] mt-0.5">
               Daftar catatan kehadiran WFH Anda.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
             <div>
-              <label htmlFor="startDate" className="block text-xs text-[#475569] mb-1">
+              <label htmlFor="startDate" className="block text-xs text-[#6E4A3E] mb-1">
                 Dari Tanggal
               </label>
               <input
@@ -337,11 +340,11 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
                   setStartDate(e.target.value);
                   setPage(1);
                 }}
-                className="min-h-[44px] rounded-lg border border-[#CBD5E1] bg-white px-3 text-sm text-[#0F172A] focus:border-[#0F766E] focus:outline-none"
+                className="min-h-[44px] rounded-md border border-[#D2BBAE] bg-white px-3 text-sm text-[#3A0B07] focus:border-[#D1510A] focus:outline-none"
               />
             </div>
             <div>
-              <label htmlFor="endDate" className="block text-xs text-[#475569] mb-1">
+              <label htmlFor="endDate" className="block text-xs text-[#6E4A3E] mb-1">
                 Sampai Tanggal
               </label>
               <input
@@ -352,7 +355,7 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
                   setEndDate(e.target.value);
                   setPage(1);
                 }}
-                className="min-h-[44px] rounded-lg border border-[#CBD5E1] bg-white px-3 text-sm text-[#0F172A] focus:border-[#0F766E] focus:outline-none"
+                className="min-h-[44px] rounded-md border border-[#D2BBAE] bg-white px-3 text-sm text-[#3A0B07] focus:border-[#D1510A] focus:outline-none"
               />
             </div>
             {(startDate || endDate) && (
@@ -363,7 +366,7 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
                   setEndDate('');
                   setPage(1);
                 }}
-                className="self-end min-h-[44px] px-3 rounded-lg border border-[#CBD5E1] bg-white hover:bg-[#F8FAFC] text-xs font-medium text-[#475569] cursor-pointer"
+                className="self-end min-h-[44px] px-3 rounded-md border border-[#D2BBAE] bg-white hover:bg-[#FAF6F3] text-xs font-medium text-[#6E4A3E] cursor-pointer"
               >
                 Reset
               </button>
@@ -372,12 +375,12 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
         </div>
 
         {historyLoading ? (
-          <div className="py-10 flex items-center justify-center gap-3 text-sm text-[#475569]">
-            <RefreshCw className="w-4 h-4 animate-spin text-[#0F766E]" />
+          <div className="py-10 flex items-center justify-center gap-3 text-sm text-[#6E4A3E]">
+            <RefreshCw className="w-4 h-4 animate-spin text-[#D1510A]" />
             <span>Memuat riwayat absensi...</span>
           </div>
         ) : historyError ? (
-          <div className="mt-4 rounded-lg border border-[#FECACA] bg-[#FEF2F2] p-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="mt-4 rounded-md border border-[#FECACA] bg-[#FEF2F2] p-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 text-sm text-[#B91C1C]">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{historyError}</span>
@@ -385,13 +388,13 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
             <button
               type="button"
               onClick={loadHistory}
-              className="min-h-[44px] px-3.5 rounded-lg border border-[#FECACA] bg-white text-sm font-medium text-[#B91C1C] cursor-pointer"
+              className="min-h-[44px] px-3.5 rounded-md border border-[#FECACA] bg-white text-sm font-medium text-[#B91C1C] cursor-pointer"
             >
               Muat Ulang
             </button>
           </div>
         ) : !history || history.items.length === 0 ? (
-          <div className="py-10 text-center text-sm text-[#475569]">
+          <div className="py-10 text-center text-sm text-[#6E4A3E]">
             Belum ada data absensi WFH pada rentang tanggal yang dipilih.
           </div>
         ) : (
@@ -399,30 +402,30 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-left border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-[#E2E8F0] text-xs font-semibold uppercase tracking-wider text-[#475569]">
+                  <tr className="border-b border-[#EADCD3] text-xs font-semibold uppercase tracking-wider text-[#6E4A3E]">
                     <th className="py-3 pr-4">Tanggal</th>
                     <th className="py-3 px-4">Jam Masuk</th>
                     <th className="py-3 px-4">Catatan</th>
                     <th className="py-3 pl-4 text-right">Bukti Foto</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E2E8F0]">
+                <tbody className="divide-y divide-[#EADCD3]">
                   {history.items.map((item) => (
-                    <tr key={item.id} className="hover:bg-[#F8FAFC]">
-                      <td className="py-3.5 pr-4 whitespace-nowrap font-medium text-[#0F172A]">
+                    <tr key={item.id} className="hover:bg-[#FAF6F3]">
+                      <td className="py-3.5 pr-4 whitespace-nowrap font-medium text-[#3A0B07]">
                         {formatDateId(item.attendanceDate, true)}
                       </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap font-mono-tabular text-[#0F172A]">
+                      <td className="py-3.5 px-4 whitespace-nowrap font-mono-tabular text-[#3A0B07]">
                         {formatTimeId(item.clockInAt)}
                       </td>
-                      <td className="py-3.5 px-4 text-[#475569] max-w-xs truncate">
+                      <td className="py-3.5 px-4 text-[#6E4A3E] max-w-xs truncate">
                         {item.notes || '—'}
                       </td>
                       <td className="py-3.5 pl-4 text-right">
                         <button
                           type="button"
                           onClick={() => onPreviewPhoto(`${ASSET_BASE_URL}${item.photoUrl}`)}
-                          className="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-lg border border-[#CBD5E1] bg-white hover:bg-[#F8FAFC] text-xs font-medium text-[#0F766E] cursor-pointer"
+                          className="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-md border border-[#D2BBAE] bg-white hover:bg-[#FAF6F3] text-xs font-medium text-[#7E2908] cursor-pointer"
                         >
                           <FileImage className="w-3.5 h-3.5" />
                           Lihat Foto
@@ -435,10 +438,10 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
             </div>
 
             {history.meta.totalPages > 1 && (
-              <div className="mt-4 pt-4 border-t border-[#E2E8F0] flex items-center justify-between text-xs text-[#475569]">
+              <div className="mt-4 pt-4 border-t border-[#EADCD3] flex items-center justify-between text-xs text-[#6E4A3E]">
                 <span>
-                  Halaman <strong className="text-[#0F172A]">{history.meta.page}</strong> dari{' '}
-                  <strong className="text-[#0F172A]">{history.meta.totalPages}</strong> (
+                  Halaman <strong className="text-[#3A0B07]">{history.meta.page}</strong> dari{' '}
+                  <strong className="text-[#3A0B07]">{history.meta.totalPages}</strong> (
                   {history.meta.total} data)
                 </span>
                 <div className="flex items-center gap-2">
@@ -446,7 +449,7 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
                     type="button"
                     disabled={page <= 1}
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    className="min-h-[44px] px-3 rounded-lg border border-[#CBD5E1] bg-white disabled:opacity-50 text-xs font-medium text-[#0F172A] cursor-pointer"
+                    className="min-h-[44px] px-3 rounded-md border border-[#D2BBAE] bg-white disabled:opacity-50 text-xs font-medium text-[#3A0B07] cursor-pointer"
                   >
                     Sebelumnya
                   </button>
@@ -454,7 +457,7 @@ export function AttendanceSection({ onPreviewPhoto }: AttendanceSectionProps) {
                     type="button"
                     disabled={page >= history.meta.totalPages}
                     onClick={() => setPage((p) => p + 1)}
-                    className="min-h-[44px] px-3 rounded-lg border border-[#CBD5E1] bg-white disabled:opacity-50 text-xs font-medium text-[#0F172A] cursor-pointer"
+                    className="min-h-[44px] px-3 rounded-md border border-[#D2BBAE] bg-white disabled:opacity-50 text-xs font-medium text-[#3A0B07] cursor-pointer"
                   >
                     Berikutnya
                   </button>
