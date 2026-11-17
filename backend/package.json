@@ -1,0 +1,50 @@
+{
+  "name": "wfh-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "nest build api-gateway && nest build auth-service && nest build employee-service && nest build attendance-service",
+    "start:gateway": "nest start api-gateway --watch",
+    "start:auth": "nest start auth-service --watch",
+    "start:employee": "nest start employee-service --watch",
+    "start:attendance": "nest start attendance-service --watch",
+    "dev": "npx concurrently -n GATEWAY,AUTH,EMPLOYEE,ATTENDANCE -c blue,green,yellow,magenta \"npm run start:gateway\" \"npm run start:auth\" \"npm run start:employee\" \"npm run start:attendance\"",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "prisma:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.12",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.0.12",
+    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/microservices": "^11.0.12",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^11.0.12",
+    "@nestjs/swagger": "^11.1.0",
+    "@prisma/client": "^6.5.0",
+    "bcrypt": "^5.1.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "multer": "^1.4.5-lts.2",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.6",
+    "@types/bcrypt": "^5.0.2",
+    "@types/express": "^5.0.1",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.13.10",
+    "@types/passport-jwt": "^4.0.1",
+    "concurrently": "^9.1.2",
+    "prisma": "^6.5.0",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.8.2"
+  }
+}

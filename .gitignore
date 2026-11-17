@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Uploads (keep folder, ignore uploaded user photos)
+backend/api-gateway/uploads/*
+!backend/api-gateway/uploads/.gitkeep
+
+# OS & IDE
+.DS_Store
+.vscode/
+.idea/
+*.log

@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  EMPLOYEE
+  HRD_ADMIN
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique @db.VarChar(150)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  role         Role      @default(EMPLOYEE)
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  employee     Employee?
+
+  @@map("users")
+}
+
+model Employee {
+  id           Int            @id @default(autoincrement())
+  userId       Int            @unique @map("user_id")
+  employeeCode String         @unique @map("employee_code") @db.VarChar(30)
+  fullName     String         @map("full_name") @db.VarChar(150)
+  department   String         @db.VarChar(100)
+  position     String         @db.VarChar(100)
+  phone        String?        @db.VarChar(30)
+  status       EmployeeStatus @default(ACTIVE)
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attendances Attendance[]
+
+  @@index([department])
+  @@index([status])
+  @@map("employees")
+}
+
+model Attendance {
+  id             Int      @id @default(autoincrement())
+  employeeId     Int      @map("employee_id")
+  attendanceDate DateTime @map("attendance_date") @db.Date
+  clockInAt      DateTime @map("clock_in_at")
+  photoUrl       String   @map("photo_url") @db.VarChar(255)
+  notes          String?  @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, attendanceDate])
+  @@index([attendanceDate])
+  @@map("attendances")
+}
