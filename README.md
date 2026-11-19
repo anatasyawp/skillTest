@@ -1,10 +1,10 @@
 # DEXAsync
 
-Aplikasi absensi WFH dan monitoring karyawan. Backend pakai NestJS microservices + Prisma (MySQL), frontend pakai React + Vite dengan satu app yang tampilannya menyesuaikan role (`HRD_ADMIN` dan `EMPLOYEE`).
+Aplikasi absensi WFH dan monitoring karyawan. Backend NestJS microservices + Prisma (MySQL), frontendReact + Vite dengan satu app yang tampilannya menyesuaikan role (`HRD_ADMIN` dan `EMPLOYEE`).
 
 ## Sebelum mulai
 
-Pastikan di laptop sudah terpasang Node.js 20+ dan MySQL sudah jalan di port `3306` (lewat `brew services start mysql`, XAMPP, Laragon, atau service MySQL lokal lainnya).
+Pastikan di laptop sudah terpasang Node.js 20+ dan MySQL sudah jalan di port `3306` (lewat `brew services start mysql`, XAMPP, Laragon, atau service MySQL lokal lainnya). 
 
 ## Baru clone repo
 
