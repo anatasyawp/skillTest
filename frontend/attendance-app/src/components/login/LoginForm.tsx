@@ -1,57 +1,87 @@
-import { FC, FormEvent, useEffect, useState } from 'react';
+import { FC, FormEvent, useEffect, useRef, useState } from 'react';
 import {
-  ArrowRight,
+  AlertCircle,
   Check,
   Eye,
   EyeOff,
   HelpCircle,
-  KeyRound,
   Loader2,
   Lock,
   Mail,
   ShieldCheck,
   UserCheck,
+  X,
 } from 'lucide-react';
 import { AuthUser, login, setToken } from '../../api';
 
+export type MascotState = 'idle' | 'typing' | 'loading' | 'flying' | 'error';
+
 interface LoginFormProps {
   onLoginSuccess: (user: AuthUser) => void;
+  onMascotStateChange?: (state: MascotState) => void;
 }
 
 const REMEMBER_ME_KEY = 'dexasync_remembered_identifier';
 
-export const LoginForm: FC<LoginFormProps> = ({ onLoginSuccess }) => {
-  const [emailOrUsername, setEmailOrUsername] = useState('');
+export const LoginForm: FC<LoginFormProps> = ({ onLoginSuccess, onMascotStateChange }) => {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [flyingOut, setFlyingOut] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{ identifier?: string; password?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [forgotPasswordModalOpen, setForgotPasswordModalOpen] = useState(false);
 
-  // Load remembered identifier on initial mount
+  const flightTimerRef = useRef<number | null>(null);
+
   useEffect(() => {
     try {
       const savedIdentifier = localStorage.getItem(REMEMBER_ME_KEY);
       if (savedIdentifier) {
-        setEmailOrUsername(savedIdentifier);
+        setEmail(savedIdentifier);
         setRememberMe(true);
       }
     } catch {
-      // LocalStorage access guard
+      // Ignore storage access errors
     }
+    return () => {
+      if (flightTimerRef.current !== null) {
+        window.clearTimeout(flightTimerRef.current);
+      }
+    };
   }, []);
 
-  const validate = (): boolean => {
-    const errors: { identifier?: string; password?: string } = {};
+  useEffect(() => {
+    if (!forgotPasswordModalOpen) return;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
 
-    const trimmed = emailOrUsername.trim();
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setForgotPasswordModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [forgotPasswordModalOpen]);
+
+  const validate = (): boolean => {
+    const errors: { email?: string; password?: string } = {};
+    const trimmed = email.trim();
+
     if (!trimmed) {
-      errors.identifier = 'Email atau username wajib diisi.';
-    } else if (trimmed.includes('@') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      errors.identifier = 'Format email tidak valid (contoh: nama@company.local).';
+      errors.email = 'Email wajib diisi.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      errors.email = 'Format email tidak valid.';
     }
 
     if (!password) {
@@ -61,315 +91,316 @@ export const LoginForm: FC<LoginFormProps> = ({ onLoginSuccess }) => {
     }
 
     setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+    if (Object.keys(errors).length > 0) {
+      onMascotStateChange?.('error');
+      return false;
+    }
+    return true;
   };
 
-  const executeLogin = async (rawIdentifier: string, rawPassword: string) => {
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (loading || flyingOut) return;
+    if (!validate()) return;
+
     setLoading(true);
     setServerError(null);
+    onMascotStateChange?.('loading');
 
     try {
-      const trimmed = rawIdentifier.trim();
-      // Auto-normalize username prefix to company email domain if '@' is omitted
-      let normalizedEmail = trimmed.toLowerCase();
-      if (!normalizedEmail.includes('@')) {
-        normalizedEmail = `${normalizedEmail}@company.local`;
-      }
+      const normalizedEmail = email.trim().toLowerCase();
+      const response = await login(normalizedEmail, password);
 
-      const response = await login(normalizedEmail, rawPassword);
-
-      // Persist Remember Me preference
       try {
         if (rememberMe) {
-          localStorage.setItem(REMEMBER_ME_KEY, trimmed);
+          localStorage.setItem(REMEMBER_ME_KEY, normalizedEmail);
         } else {
           localStorage.removeItem(REMEMBER_ME_KEY);
         }
       } catch {
-        // Ignore localStorage error
+        // Ignore storage error
       }
 
       setToken(response.accessToken);
-      onLoginSuccess(response.user);
+      setLoading(false);
+      setFlyingOut(true);
+      onMascotStateChange?.('flying');
+
+      const prefersReducedMotion =
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReducedMotion) {
+        onLoginSuccess(response.user);
+      } else {
+        flightTimerRef.current = window.setTimeout(() => {
+          onLoginSuccess(response.user);
+        }, 720);
+      }
     } catch (err) {
-      let message = 'Gagal melakukan login. Periksa kembali email dan password Anda.';
+      let message = 'Login gagal. Periksa kembali email dan password Anda.';
       if (err instanceof Error) {
         if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-          message = 'Tidak dapat menghubungi server API (port 3000). Pastikan backend sedang aktif.';
+          message = 'Server API (port 3000) tidak merespons. Pastikan backend sedang berjalan.';
         } else {
           message = err.message;
         }
       }
       setServerError(message);
-    } finally {
       setLoading(false);
+      onMascotStateChange?.('error');
     }
   };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!validate()) {
-      return;
-    }
-    await executeLogin(emailOrUsername, password);
-  };
-
-  // Helper to autofill demo credentials for testing
-  const fillDemoAccount = (identifier: string) => {
-    setEmailOrUsername(identifier);
-    setPassword('Password123!');
+  const fillDemoAccount = (demoEmail: string) => {
+    setEmail(demoEmail);
+    setPassword('password');
     setFieldErrors({});
     setServerError(null);
+    onMascotStateChange?.('typing');
   };
+
+  const isBusy = loading || flyingOut;
 
   return (
     <>
-      {/* Floating Login Card Body */}
       <div className="w-full">
-        {/* Card Header: Heading & Subtitle */}
         <div className="text-center">
-          <h1 className="text-2xl sm:text-[28px] font-extrabold tracking-tight text-[#0F172A]">
-            Selamat Datang!
+          <h1 className="text-2xl font-extrabold tracking-tight text-[#2A040A]">
+            Masuk ke Akun
           </h1>
-          <p className="mt-2 text-xs sm:text-sm text-[#64748B] leading-relaxed max-w-sm mx-auto">
-            Masuk dengan akun perusahaan Anda untuk mengakses workspace DEXAsync.
+          <p className="mt-1.5 text-sm text-[#634E53]">
+            Catat kehadiran WFH atau kelola data karyawan.
           </p>
         </div>
 
-        {/* Server Error Alert with Inspecting Mascot Avatar */}
         {serverError && (
           <div
             role="alert"
-            className="mt-5 flex items-center sm:items-start gap-3.5 sm:gap-4 rounded-2xl border border-red-200 bg-red-50/95 p-3.5 sm:p-4 text-xs text-red-800 shadow-xs animate-in fade-in duration-200 text-left"
+            className="mt-5 flex items-start gap-2.5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
           >
-            <div className="shrink-0 flex items-center justify-center p-1.5 bg-white rounded-2xl border border-red-200/80 shadow-2xs">
-              <img
-                src="/gagal-dexo.png"
-                alt="DEXO Peringatan"
-                className="h-16 w-16 sm:h-20 sm:w-20 object-contain drop-shadow-sm transition-transform duration-200 hover:scale-105"
-              />
-            </div>
-            <div className="flex-1 leading-relaxed">
-              <p className="text-sm font-bold text-red-900">Autentikasi Tidak Berhasil</p>
-              <p className="mt-1 text-xs sm:text-[13px] text-red-700 leading-relaxed">{serverError}</p>
-            </div>
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-red-600" />
+            <span>{serverError}</span>
           </div>
         )}
 
-        {/* Login Form */}
         <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
-          {/* Email / Username Field */}
+          {/* Email Field */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label
-                htmlFor="login-identifier"
-                className="text-xs font-semibold text-[#0F172A]"
-              >
-                Email Perusahaan / Username
-              </label>
-              {fieldErrors.identifier && (
-                <span className="text-[11px] font-medium text-red-600">
-                  {fieldErrors.identifier}
-                </span>
-              )}
-            </div>
+            <label htmlFor="login-email" className="block text-xs font-bold text-[#2A040A] mb-1.5">
+              Email
+            </label>
             <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#94A3B8]">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#634E53]">
                 <Mail className="h-4 w-4" />
               </div>
               <input
-                id="login-identifier"
-                type="text"
-                autoComplete="username"
-                disabled={loading}
-                value={emailOrUsername}
-                onChange={(e) => {
-                  setEmailOrUsername(e.target.value);
-                  if (fieldErrors.identifier) {
-                    setFieldErrors((prev) => ({ ...prev, identifier: undefined }));
-                  }
+                id="login-email"
+                type="email"
+                autoComplete="email"
+                disabled={isBusy}
+                value={email}
+                onFocus={() => {
+                  if (!isBusy && !serverError) onMascotStateChange?.('typing');
                 }}
-                placeholder="nama@company.local atau username"
-                aria-invalid={!!fieldErrors.identifier}
-                className={`w-full min-h-[46px] rounded-xl border bg-white pl-10 pr-4 py-2.5 text-base sm:text-sm text-[#0F172A] placeholder:text-[#94A3B8] shadow-2xs transition-all duration-150 focus:outline-none ${
-                  fieldErrors.identifier
-                    ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100'
-                    : 'border-[#E2E8F0] hover:border-[#800020]/40 focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/10'
+                onBlur={() => {
+                  if (!isBusy && !serverError) onMascotStateChange?.('idle');
+                }}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: undefined }));
+                  if (serverError) setServerError(null);
+                }}
+                placeholder="nama@company.local"
+                aria-invalid={Boolean(fieldErrors.email)}
+                className={`w-full min-h-[46px] rounded-xl border bg-white pl-10 pr-4 py-2.5 text-sm text-[#2A040A] placeholder:text-[#8B757A] transition-colors focus:ring-2 focus:outline-none ${
+                  fieldErrors.email
+                    ? 'border-red-400 focus:border-red-600 focus:ring-red-100'
+                    : 'border-[#DDD3D6] hover:border-[#800020]/50 focus:border-[#800020] focus:ring-[#800020]/15'
                 }`}
               />
             </div>
+            {fieldErrors.email && (
+              <p className="mt-1 text-xs font-medium text-red-600">{fieldErrors.email}</p>
+            )}
           </div>
 
           {/* Password Field */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label
-                htmlFor="login-password"
-                className="text-xs font-semibold text-[#0F172A]"
-              >
-                Password
-              </label>
-              {fieldErrors.password && (
-                <span className="text-[11px] font-medium text-red-600">
-                  {fieldErrors.password}
-                </span>
-              )}
-            </div>
+            <label htmlFor="login-password" className="block text-xs font-bold text-[#2A040A] mb-1.5">
+              Password
+            </label>
             <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#94A3B8]">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#634E53]">
                 <Lock className="h-4 w-4" />
               </div>
               <input
                 id="login-password"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
-                disabled={loading}
+                disabled={isBusy}
                 value={password}
+                onFocus={() => {
+                  if (!isBusy && !serverError) onMascotStateChange?.('typing');
+                }}
+                onBlur={() => {
+                  if (!isBusy && !serverError) onMascotStateChange?.('idle');
+                }}
                 onChange={(e) => {
                   setPassword(e.target.value);
                   if (fieldErrors.password) {
                     setFieldErrors((prev) => ({ ...prev, password: undefined }));
                   }
+                  if (serverError) setServerError(null);
                 }}
-                placeholder="Masukkan kata sandi"
-                aria-invalid={!!fieldErrors.password}
-                className={`w-full min-h-[46px] rounded-xl border bg-white pl-10 pr-11 py-2.5 text-base sm:text-sm text-[#0F172A] placeholder:text-[#94A3B8] shadow-2xs transition-all duration-150 focus:outline-none ${
+                placeholder="Masukkan password"
+                aria-invalid={Boolean(fieldErrors.password)}
+                className={`w-full min-h-[46px] rounded-xl border bg-white pl-10 pr-12 py-2.5 text-sm text-[#2A040A] placeholder:text-[#8B757A] transition-colors focus:ring-2 focus:outline-none ${
                   fieldErrors.password
-                    ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100'
-                    : 'border-[#E2E8F0] hover:border-[#800020]/40 focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/10'
+                    ? 'border-red-400 focus:border-red-600 focus:ring-red-100'
+                    : 'border-[#DDD3D6] hover:border-[#800020]/50 focus:border-[#800020] focus:ring-[#800020]/15'
                 }`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
-                className="absolute inset-y-0 right-0 flex min-w-[42px] items-center justify-center rounded-r-xl text-[#94A3B8] hover:text-[#0F172A] transition-colors cursor-pointer"
+                aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                className="absolute inset-y-0 right-0 flex min-w-[44px] items-center justify-center rounded-r-xl text-[#634E53] hover:text-[#2A040A] transition-colors cursor-pointer"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
+            {fieldErrors.password && (
+              <p className="mt-1 text-xs font-medium text-red-600">{fieldErrors.password}</p>
+            )}
           </div>
 
-          {/* Remember Me & Forgot Password Row */}
-          <div className="flex items-center justify-between text-xs pt-1">
-            <label className="flex items-center gap-2 cursor-pointer select-none">
+          {/* Remember Me & Forgot Password */}
+          <div className="flex items-center justify-between text-xs pt-0.5">
+            <label className="inline-flex items-center gap-2 min-h-[44px] cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="sr-only"
+                className="peer sr-only"
               />
               <span
                 aria-hidden="true"
-                className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${
+                className={`flex h-4.5 w-4.5 items-center justify-center rounded-md border transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-[#800020] peer-focus-visible:outline-offset-2 ${
                   rememberMe
                     ? 'border-[#800020] bg-[#800020] text-white'
-                    : 'border-[#CBD5E1] bg-white hover:border-[#800020]'
+                    : 'border-[#C9BFC2] bg-white hover:border-[#800020]'
                 }`}
               >
                 {rememberMe && <Check className="h-3 w-3 stroke-[3]" />}
               </span>
-              <span className="text-[#334155] font-medium">Ingat saya</span>
+              <span className="text-[#2A040A] font-semibold">Ingat email</span>
             </label>
 
             <button
               type="button"
               onClick={() => setForgotPasswordModalOpen(true)}
-              className="inline-flex items-center gap-1 font-semibold text-[#800020] hover:text-[#DC2626] transition-colors cursor-pointer"
+              className="min-h-[44px] px-1 font-bold text-[#800020] hover:text-[#640019] transition-colors cursor-pointer"
             >
-              <KeyRound className="h-3.5 w-3.5" />
-              <span>Lupa password?</span>
+              Lupa password?
             </button>
           </div>
 
-          {/* Primary Action Button: "Sign In to Workspace" */}
+          {/* Primary Submit Button */}
           <button
             type="submit"
-            disabled={loading}
-            className="group relative flex w-full min-h-[48px] items-center justify-center gap-2 rounded-2xl bg-[#800020] hover:bg-[#68001A] active:scale-[0.99] px-6 py-3 text-sm font-bold text-white shadow-md shadow-[#800020]/20 transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer mt-4"
+            disabled={isBusy}
+            className="w-full min-h-[48px] rounded-full bg-[#800020] hover:bg-[#640019] disabled:opacity-75 text-white text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
           >
-            {loading ? (
+            {flyingOut ? (
+              <>
+                <Check className="h-4 w-4 stroke-[3]" />
+                <span>Berhasil masuk...</span>
+              </>
+            ) : loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin text-white" />
-                <span>Mengautentikasi...</span>
+                <span>Memeriksa akun...</span>
               </>
             ) : (
-              <>
-                <span>Sign In to Workspace</span>
-                <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" />
-              </>
+              <span>Masuk</span>
             )}
           </button>
         </form>
 
-        {/* Subtle Testing Helper: Demo Accounts */}
-        <div className="mt-6 pt-4 border-t border-[#F1F5F9]">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-mono font-medium uppercase tracking-wider text-[#94A3B8]">
-              Cepat Masuk (Demo):
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
+        {/* Demo Accounts */}
+        <div className="mt-6 pt-5 border-t border-[#F2ECEE]">
+          <p className="text-xs font-semibold text-[#634E53] mb-2.5 text-center">
+            Isi cepat akun demo
+          </p>
+          <div className="grid grid-cols-2 gap-2.5">
             <button
               type="button"
-              onClick={() => fillDemoAccount('budi.santoso@company.local')}
-              className="flex items-center justify-center gap-1.5 min-h-[38px] rounded-xl border border-[#E2E8F0] bg-[#FAFAFA] hover:border-[#800020]/40 hover:bg-[#FFF5F7] px-2.5 py-1.5 text-xs font-semibold text-[#334155] transition-all cursor-pointer"
+              disabled={isBusy}
+              onClick={() => fillDemoAccount('kuronami@gmail.com')}
+              className="min-h-[44px] px-3 rounded-full border border-[#ECE4E7] bg-[#F7F4F5] hover:bg-[#FBE8EC] hover:border-[#F2C8D2] hover:text-[#800020] text-xs font-bold text-[#2A040A] inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
             >
               <UserCheck className="h-3.5 w-3.5 text-[#800020] shrink-0" />
-              <span className="truncate">Karyawan (Budi)</span>
+              <span>Karyawan</span>
             </button>
             <button
               type="button"
-              onClick={() => fillDemoAccount('hrd@company.local')}
-              className="flex items-center justify-center gap-1.5 min-h-[38px] rounded-xl border border-[#E2E8F0] bg-[#FAFAFA] hover:border-[#DC2626]/40 hover:bg-[#FFF5F7] px-2.5 py-1.5 text-xs font-semibold text-[#334155] transition-all cursor-pointer"
+              disabled={isBusy}
+              onClick={() => fillDemoAccount('hrd@gmail.com')}
+              className="min-h-[44px] px-3 rounded-full border border-[#ECE4E7] bg-[#F7F4F5] hover:bg-[#FBE8EC] hover:border-[#F2C8D2] hover:text-[#800020] text-xs font-bold text-[#2A040A] inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
             >
-              <ShieldCheck className="h-3.5 w-3.5 text-[#DC2626] shrink-0" />
-              <span className="truncate">HRD Admin (Rina)</span>
+              <ShieldCheck className="h-3.5 w-3.5 text-[#800020] shrink-0" />
+              <span>HRD Admin</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Forgot Password Modal with DEXO Guide */}
+      {/* Forgot Password Modal */}
       {forgotPasswordModalOpen && (
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Bantuan Lupa Kata Sandi"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#160305]/60 backdrop-blur-xs p-4"
+          aria-labelledby="forgot-pw-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#2A040A]/50 p-4"
           onClick={() => setForgotPasswordModalOpen(false)}
         >
           <div
-            className="w-full max-w-md bg-white rounded-3xl border border-[#E2E8F0] p-6 shadow-2xl text-center animate-in zoom-in-95 duration-150"
+            className="relative w-full max-w-md bg-white rounded-3xl border border-[#ECE4E7] p-6 shadow-2xl text-center"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Mascot Image in Modal */}
+            <button
+              type="button"
+              onClick={() => setForgotPasswordModalOpen(false)}
+              aria-label="Tutup bantuan lupa password"
+              className="absolute top-4 right-4 h-10 w-10 rounded-full hover:bg-[#F7F4F5] text-[#634E53] hover:text-[#2A040A] inline-flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
             <div className="mx-auto mb-3 flex items-center justify-center">
               <img
                 src="/pemberitahuan-dexo.png"
                 alt="DEXO Pemberitahuan"
-                className="h-24 w-24 object-contain drop-shadow-sm"
+                className="h-24 w-24 object-contain"
               />
             </div>
 
-            <h3 className="text-base sm:text-lg font-extrabold text-[#0F172A]">
-              Lupa Kata Sandi Akun?
-            </h3>
-            <p className="mt-2 text-xs text-[#64748B] leading-relaxed">
-              Untuk menjaga integritas dan keamanan data presensi, reset kata sandi dikelola langsung oleh tim HRD DEXA.
+            <h2 id="forgot-pw-title" className="text-lg font-extrabold text-[#2A040A]">
+              Lupa Kata Sandi?
+            </h2>
+            <p className="mt-1.5 text-sm text-[#634E53] leading-relaxed">
+              Reset kata sandi dikelola langsung oleh tim HRD agar keamanan data presensi tetap terjaga.
             </p>
 
-            <div className="mt-4 p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] text-left">
-              <p className="text-xs font-bold text-[#0F172A] flex items-center gap-1.5 mb-1">
+            <div className="mt-4 p-4 rounded-2xl bg-[#F7F4F5] border border-[#ECE4E7] text-left">
+              <p className="text-xs font-bold text-[#2A040A] flex items-center gap-1.5 mb-1">
                 <HelpCircle className="w-3.5 h-3.5 text-[#800020]" />
-                <span>Pengajuan Reset Kata Sandi:</span>
+                <span>Cara Pengajuan Reset</span>
               </p>
-              <p className="text-xs text-[#64748B] leading-relaxed">
-                Silakan hubungi administrator HRD dengan melampirkan NIK dan nama lengkap Anda ke:
-                <strong className="text-[#800020] font-mono font-bold block mt-1">
-                  hrd@company.local
-                </strong>
+              <p className="text-xs text-[#634E53] leading-relaxed">
+                Hubungi admin HRD dengan melampirkan NIK dan nama lengkap ke:
+                <strong className="text-[#800020] font-bold block mt-1">hrd@gmail.com</strong>
               </p>
             </div>
 
@@ -377,9 +408,9 @@ export const LoginForm: FC<LoginFormProps> = ({ onLoginSuccess }) => {
               <button
                 type="button"
                 onClick={() => setForgotPasswordModalOpen(false)}
-                className="w-full py-2.5 rounded-xl bg-[#800020] hover:bg-[#68001A] text-white text-xs font-bold shadow-md shadow-[#800020]/20 transition-all cursor-pointer"
+                className="w-full min-h-[44px] rounded-full bg-[#800020] hover:bg-[#640019] text-white text-sm font-bold transition-colors cursor-pointer"
               >
-                Saya Mengerti
+                Mengerti
               </button>
             </div>
           </div>

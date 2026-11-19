@@ -7,8 +7,17 @@ export interface EmployeeQueryPayload {
   search?: string;
   department?: string;
   status?: EmployeeStatus;
+  notAttendedToday?: boolean;
   page?: number;
   limit?: number;
+}
+
+function toTodayDateOnly(): Date {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  return new Date(`${yyyy}-${mm}-${dd}T00:00:00.000Z`);
 }
 
 export interface CreateEmployeePayload {
@@ -75,6 +84,15 @@ export class EmployeeService {
       where.status = query.status;
     }
 
+    if (query.notAttendedToday === true || String(query.notAttendedToday) === 'true') {
+      where.status = EmployeeStatus.ACTIVE;
+      where.attendances = {
+        none: {
+          attendanceDate: toTodayDateOnly(),
+        },
+      };
+    }
+
     if (query.search?.trim()) {
       const keyword = query.search.trim();
       where.OR = [
@@ -133,7 +151,7 @@ export class EmployeeService {
       throwRpcError(HttpStatus.CONFLICT, 'Email sudah terdaftar.');
     }
     if (existingCode) {
-      throwRpcError(HttpStatus.CONFLICT, 'Kode karyawan (NIK/NIP) sudah digunakan.');
+      throwRpcError(HttpStatus.CONFLICT, 'NIK sudah terdaftar.');
     }
 
     const passwordHash = await bcrypt.hash(payload.password, 10);
@@ -187,7 +205,7 @@ export class EmployeeService {
           where: { employeeCode: normalizedCode },
         });
         if (codeTaken) {
-          throwRpcError(HttpStatus.CONFLICT, 'Kode karyawan sudah digunakan.');
+          throwRpcError(HttpStatus.CONFLICT, 'NIK sudah digunakan oleh karyawan lain.');
         }
       }
     }

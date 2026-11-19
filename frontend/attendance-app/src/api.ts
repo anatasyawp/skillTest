@@ -177,6 +177,7 @@ export async function fetchEmployees(params: {
   search?: string;
   department?: string;
   status?: string;
+  notAttendedToday?: boolean;
   page?: number;
   limit?: number;
 }): Promise<PaginatedResponse<EmployeeItem>> {
@@ -184,6 +185,7 @@ export async function fetchEmployees(params: {
   if (params.search) qs.set('search', params.search);
   if (params.department) qs.set('department', params.department);
   if (params.status) qs.set('status', params.status);
+  if (params.notAttendedToday) qs.set('notAttendedToday', 'true');
   if (params.page) qs.set('page', String(params.page));
   if (params.limit) qs.set('limit', String(params.limit));
   const query = qs.toString();

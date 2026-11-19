@@ -14,15 +14,18 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiBearerAuth, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
 import { EmployeeStatus, Role } from '@prisma/client';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsEmail,
   IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   Max,
+  MaxLength,
   Min,
   MinLength,
 } from 'class-validator';
@@ -46,6 +49,12 @@ export class EmployeeQueryDto {
   @IsOptional()
   @IsEnum(EmployeeStatus)
   status?: EmployeeStatus;
+
+  @ApiPropertyOptional({ type: Boolean, description: 'Filter karyawan aktif yang belum absen hari ini' })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  notAttendedToday?: boolean;
 
   @ApiPropertyOptional({ default: 1 })
   @IsOptional()
@@ -78,9 +87,10 @@ export class CreateEmployeeDto {
   @IsEnum(Role)
   role?: Role;
 
-  @ApiProperty({ example: 'EMP-004' })
+  @ApiProperty({ example: '3174011508950001' })
   @IsString()
-  @IsNotEmpty({ message: 'Kode karyawan wajib diisi.' })
+  @IsNotEmpty({ message: 'NIK wajib diisi.' })
+  @Matches(/^\d{16}$/, { message: 'NIK harus terdiri dari tepat 16 digit angka.' })
   employeeCode: string;
 
   @ApiProperty({ example: 'Dewi Lestari' })
@@ -101,6 +111,8 @@ export class CreateEmployeeDto {
   @ApiPropertyOptional({ example: '081234567899' })
   @IsOptional()
   @IsString()
+  @MaxLength(15, { message: 'Nomor telepon maksimal 15 digit.' })
+  @Matches(/^$|^\d{1,15}$/, { message: 'Nomor telepon hanya boleh berisi angka (maksimal 15 digit).' })
   phone?: string;
 
   @ApiPropertyOptional({ enum: EmployeeStatus, default: EmployeeStatus.ACTIVE })
@@ -126,10 +138,11 @@ export class UpdateEmployeeDto {
   @IsEnum(Role)
   role?: Role;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: '3174011508950001' })
   @IsOptional()
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'NIK wajib diisi.' })
+  @Matches(/^\d{16}$/, { message: 'NIK harus terdiri dari tepat 16 digit angka.' })
   employeeCode?: string;
 
   @ApiPropertyOptional()
@@ -153,6 +166,8 @@ export class UpdateEmployeeDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(15, { message: 'Nomor telepon maksimal 15 digit.' })
+  @Matches(/^$|^\d{1,15}$/, { message: 'Nomor telepon hanya boleh berisi angka (maksimal 15 digit).' })
   phone?: string;
 
   @ApiPropertyOptional({ enum: EmployeeStatus })

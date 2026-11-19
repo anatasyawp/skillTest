@@ -13,6 +13,7 @@ interface CustomDropdownProps {
   placeholder?: string;
   ariaLabel?: string;
   className?: string;
+  triggerClassName?: string;
 }
 
 /**
@@ -30,6 +31,7 @@ export const CustomDropdown: FC<CustomDropdownProps> = ({
   placeholder = 'Pilih opsi...',
   ariaLabel,
   className = '',
+  triggerClassName = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -83,7 +85,7 @@ export const CustomDropdown: FC<CustomDropdownProps> = ({
           isOpen
             ? 'border-[#800020] ring-2 ring-[#800020]/15'
             : 'border-slate-200 hover:border-[#800020]/40'
-        } ${value ? 'text-slate-900 font-semibold' : 'text-slate-700'}`}
+        } ${value ? 'text-slate-900 font-semibold' : 'text-slate-700'} ${triggerClassName}`}
       >
         <span className="truncate">{displayLabel}</span>
         <ChevronDown
@@ -98,26 +100,27 @@ export const CustomDropdown: FC<CustomDropdownProps> = ({
         <div
           role="listbox"
           aria-label={ariaLabel || placeholder}
-          className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-xl border border-slate-200/90 shadow-xl shadow-black/8 py-1 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-150"
+          className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-xl border border-slate-200/90 shadow-xl shadow-black/8 py-1 max-h-60 overflow-y-auto"
         >
           {options.map((option) => {
             const isSelected = option.value === value;
 
             return (
-              <div
+              <button
                 key={option.value}
+                type="button"
                 role="option"
                 aria-selected={isSelected}
                 onClick={() => handleSelect(option.value)}
-                className={`px-3.5 py-2 text-xs flex items-center justify-between gap-2 cursor-pointer transition-colors ${
+                className={`w-full text-left px-3.5 py-2.5 text-sm sm:text-xs flex items-center justify-between gap-2 cursor-pointer transition-colors ${
                   isSelected
-                    ? 'bg-[#800020]/10 text-[#800020] font-bold'
+                    ? 'bg-[#800020]/10 text-[#800020] font-semibold'
                     : 'text-slate-700 hover:bg-[#FFF5F7] hover:text-[#800020]'
                 }`}
               >
                 <span className="truncate">{option.label}</span>
                 {isSelected && <Check className="w-3.5 h-3.5 text-[#800020] shrink-0 stroke-[2.5]" />}
-              </div>
+              </button>
             );
           })}
         </div>

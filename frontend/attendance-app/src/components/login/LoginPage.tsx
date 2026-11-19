@@ -1,53 +1,115 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { AuthUser } from '../../api';
-import { DexLogo } from '../common/DexLogo';
-import { AbstractBackground } from './AbstractBackground';
-import { LoginForm } from './LoginForm';
+import { LoginForm, MascotState } from './LoginForm';
 
 interface LoginPageProps {
   onLoginSuccess: (user: AuthUser) => void;
 }
 
-/**
- * Modern, Minimalist & Premium Single-Page Login for DEXAsync.
- * - Single-page, white-dominant layout with no split-screen.
- * - Abstract background artwork positioned along page edges (maroon, muted red, dusty rose, soft pink).
- * - Floating login card centered on the page with rounded corners and subtle shadows.
- * - DEXAsync logo at the top and DEXO mascot illustration positioned right above the login card.
- */
 export const LoginPage: FC<LoginPageProps> = ({ onLoginSuccess }) => {
-  return (
-    <main className="relative min-h-screen w-full flex flex-col justify-between items-center bg-white px-4 sm:px-6 py-8 sm:py-12 overflow-x-hidden selection:bg-[#800020]/10 selection:text-[#800020]">
-      {/* Abstract Organic Background Artwork (5-12% opacity around edges) */}
-      <AbstractBackground />
+  const [mascotState, setMascotState] = useState<MascotState>('idle');
+  const [errorShakeKey, setErrorShakeKey] = useState(0);
 
-      {/* Top Header: DEXAsync Brand Logo */}
-      <header className="relative z-10 flex flex-col items-center">
-        <DexLogo size={36} variant="light" />
+  const handleMascotChange = (next: MascotState) => {
+    setMascotState(next);
+    if (next === 'error') {
+      setErrorShakeKey((k) => k + 1);
+    }
+  };
+
+  const mascotSrc =
+    mascotState === 'loading' || mascotState === 'flying'
+      ? '/berhasil-dexo.png'
+      : mascotState === 'error'
+      ? '/gagal-dexo.png'
+      : '/sapaan-dexo.png';
+
+  const mascotAlt =
+    mascotState === 'flying'
+      ? 'DEXO terbang merayakan login berhasil'
+      : mascotState === 'loading'
+      ? 'DEXO mengepakkan sayap menunggu verifikasi'
+      : mascotState === 'error'
+      ? 'DEXO memeriksa kesalahan login'
+      : 'DEXO menyapa pengguna';
+
+  const mascotAnimationClass =
+    mascotState === 'flying'
+      ? 'animate-dexo-fly'
+      : mascotState === 'loading'
+      ? 'animate-dexo-flap'
+      : mascotState === 'error'
+      ? 'animate-dexo-shake'
+      : mascotState === 'typing'
+      ? '-translate-y-1 scale-[1.03]'
+      : 'translate-y-0 scale-100';
+
+  const shadowClass =
+    mascotState === 'flying'
+      ? 'opacity-0 scale-50'
+      : mascotState === 'loading'
+      ? 'opacity-40 scale-75'
+      : 'opacity-100 scale-100';
+
+  return (
+    <main className="min-h-screen w-full bg-[#F7F4F5] text-[#2A040A] flex flex-col justify-between items-center px-4 sm:px-6 py-7 sm:py-10 overflow-x-hidden">
+      {/* Top Minimal Brand Mark (Matches Floating Rail Badge) */}
+      <header className="flex items-center gap-2.5 select-none">
+        <div className="h-10 w-10 rounded-full bg-[#2A040A] flex items-center justify-center shrink-0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M6.5 9.5C6.5 8.11929 7.61929 7 9 7H14C16.2091 7 18 8.79086 18 11C18 12.1046 17.1046 13 16 13H9"
+              stroke="#FBE8EC"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+            />
+            <path
+              d="M17.5 14.5C17.5 15.8807 16.3807 17 15 17H10C7.79086 17 6 15.2091 6 13C6 11.8954 6.89543 11 8 11H15"
+              stroke="#DC2626"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
+        <div className="leading-tight">
+          <span className="text-lg font-extrabold tracking-tight text-[#2A040A]">
+            DEX<span className="text-[#800020]">Async</span>
+          </span>
+        </div>
       </header>
 
-      {/* Central Area: DEXO Mascot & Centered Floating Login Card */}
-      <div className="relative z-10 w-full max-w-[440px] flex flex-col items-center my-auto py-4 sm:py-6">
-        {/* DEXO Mascot Illustration directly above the Login Card */}
-        <div className="relative z-20 mb-[-22px] sm:mb-[-26px] pointer-events-none select-none">
+      {/* Center Stage: Reactive DEXO Owl + Clean Tactile Card */}
+      <div className="w-full max-w-[430px] flex flex-col items-center my-auto py-4">
+        {/* Owl Mascot Stage */}
+        <div className="relative z-20 flex flex-col items-center mb-[-22px] sm:mb-[-26px] pointer-events-none select-none">
           <img
-            src="/sapaan-dexo.png"
-            alt="DEXO Mascot"
-            className="h-24 sm:h-28 w-auto object-contain drop-shadow-[0_12px_24px_rgba(128,0,32,0.12)]"
+            key={mascotState === 'error' ? `err-${errorShakeKey}` : mascotState}
+            src={mascotSrc}
+            alt={mascotAlt}
+            className={`h-26 sm:h-30 w-auto object-contain transition-transform duration-200 ${mascotAnimationClass}`}
+          />
+          <div
+            aria-hidden="true"
+            className={`w-16 h-2.5 -mt-2 rounded-full bg-[#2A040A]/12 transition-all duration-300 ${shadowClass}`}
           />
         </div>
 
-        {/* Floating Card Container */}
-        <div className="relative z-10 w-full bg-white/95 backdrop-blur-xs rounded-3xl border border-slate-200/90 shadow-[0_20px_50px_-12px_rgba(128,0,32,0.08),0_2px_6px_rgba(0,0,0,0.03)] p-6 sm:p-8 pt-9 sm:pt-10">
-          <LoginForm onLoginSuccess={onLoginSuccess} />
+        {/* Clean White Login Card */}
+        <div
+          className={`relative z-10 w-full bg-white rounded-[32px] border border-[#ECE4E7] p-6 sm:p-8 pt-10 sm:pt-11 shadow-sm transition-opacity duration-300 ${
+            mascotState === 'flying' ? 'opacity-90' : 'opacity-100'
+          }`}
+        >
+          <LoginForm
+            onLoginSuccess={onLoginSuccess}
+            onMascotStateChange={handleMascotChange}
+          />
         </div>
       </div>
 
-      {/* Clean Distraction-Free Footer */}
-      <footer className="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-3 text-[11px] text-[#94A3B8] font-mono select-none pt-4">
-        <span>DEXAsync • SMART EMPLOYEE ATTENDANCE SYSTEM</span>
-        <span className="hidden sm:inline text-slate-300">•</span>
-        <span>CONFIDENTIAL &amp; PROPRIETARY</span>
+      {/* Clean Accessible Footer */}
+      <footer className="text-xs font-medium text-[#634E53] text-center pt-3">
+        DEXAsync · Sistem Presensi WFH Karyawan
       </footer>
     </main>
   );

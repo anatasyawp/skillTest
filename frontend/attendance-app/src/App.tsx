@@ -1,26 +1,45 @@
-import { useCallback, useEffect, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useState } from 'react';
 import {
   CalendarCheck2,
   ClipboardCheck,
   LogOut,
+  Plus,
   RefreshCw,
-  ShieldCheck,
+  Upload,
   User,
   Users,
 } from 'lucide-react';
-import {
-  AuthUser,
-  clearToken,
-  fetchProfile,
-  getToken,
-} from './api';
+import { AuthUser, clearToken, fetchProfile, getToken } from './api';
 import { AttendanceSection } from './components/AttendanceSection';
 import { MonitoringSection } from './components/MonitoringSection';
 import { PhotoPreviewModal } from './components/PhotoPreviewModal';
 import { LoginPage } from './components/LoginPage';
-import { DexLogo } from './components/common/DexLogo';
 
 type AppTab = 'employees' | 'attendances' | 'my-attendance';
+
+interface RailTooltipProps {
+  label: string;
+  children: ReactNode;
+  offsetClass?: string;
+}
+
+function RailTooltip({ label, children, offsetClass = 'left-full ml-3' }: RailTooltipProps) {
+  return (
+    <div className="relative group flex items-center justify-center">
+      {children}
+      <span
+        role="tooltip"
+        className={`pointer-events-none invisible group-hover:visible absolute ${offsetClass} top-1/2 -translate-y-1/2 z-50 whitespace-nowrap rounded-xl bg-[#2A040A] px-3 py-1.5 text-xs font-bold text-white shadow-lg opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-150`}
+      >
+        <span
+          aria-hidden="true"
+          className="absolute right-full top-1/2 -translate-y-1/2 border-[5px] border-transparent border-r-[#2A040A]"
+        />
+        {label}
+      </span>
+    </div>
+  );
+}
 
 export default function App() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -28,8 +47,10 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<AppTab>('my-attendance');
   const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
+  const [pendingQuickAdd, setPendingQuickAdd] = useState(false);
 
   const applyDefaultTabForRole = (role: AuthUser['role']) => {
+    setPendingQuickAdd(false);
     setActiveTab(role === 'HRD_ADMIN' ? 'employees' : 'my-attendance');
   };
 
@@ -63,13 +84,23 @@ export default function App() {
   const handleLogout = () => {
     clearToken();
     setUser(null);
+    setPendingQuickAdd(false);
     setActiveTab('my-attendance');
   };
 
+  const handleQuickAddEmployee = () => {
+    setActiveTab('employees');
+    setPendingQuickAdd(true);
+  };
+
+  const handleQuickAddConsumed = useCallback(() => {
+    setPendingQuickAdd(false);
+  }, []);
+
   if (authChecking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-4">
-        <div className="flex items-center gap-3 text-slate-500 text-sm font-medium">
+      <div className="min-h-screen flex items-center justify-center bg-white px-4">
+        <div className="flex items-center gap-3 text-[#634E53] text-sm font-medium">
           <RefreshCw className="w-4 h-4 animate-spin text-[#800020]" />
           <span>Memverifikasi sesi DEXAsync...</span>
         </div>
@@ -91,158 +122,292 @@ export default function App() {
     .toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 antialiased flex flex-col">
-      {/* Top Navigation Bar: Enterprise Header */}
-      <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/90 sticky top-0 z-40">
-        {/* Subtle Brand Color Accent Stripe */}
-        <div className="h-[2px] bg-gradient-to-r from-[#800020] via-[#DC2626] to-[#800020]" />
+    <div className="min-h-screen bg-white text-[#2A040A] antialiased flex flex-col lg:flex-row">
+      {/* DESKTOP LEFT FLOATING DARK PILL RAIL */}
+      <aside
+        aria-label="Navigasi Utama"
+        className="hidden lg:flex flex-col items-center w-[84px] shrink-0 py-5 px-3 gap-4 sticky top-0 h-screen bg-white z-30"
+      >
+        {/* Top Circular Brand Badge */}
+        <RailTooltip label="DEXAsync · Beranda">
+          <button
+            type="button"
+            onClick={() => {
+              setPendingQuickAdd(false);
+              setActiveTab(isHrdAdmin ? 'employees' : 'my-attendance');
+            }}
+            aria-label="DEXAsync Beranda"
+            className="h-12 w-12 rounded-full bg-[#2A040A] flex items-center justify-center shrink-0 cursor-pointer hover:bg-[#4A0712] transition-colors"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M6.5 9.5C6.5 8.11929 7.61929 7 9 7H14C16.2091 7 18 8.79086 18 11C18 12.1046 17.1046 13 16 13H9"
+                stroke="#FBE8EC"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+              />
+              <path
+                d="M17.5 14.5C17.5 15.8807 16.3807 17 15 17H10C7.79086 17 6 15.2091 6 13C6 11.8954 6.89543 11 8 11H15"
+                stroke="#DC2626"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        </RailTooltip>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-15 gap-4">
-            {/* Left: Brand Identity & Desktop Navigation */}
-            <div className="flex items-center gap-6">
-              <DexLogo variant="light" size={30} />
-
-              {/* Navigation Tabs (Desktop) */}
-              {isHrdAdmin && (
-                <nav aria-label="Menu navigasi HRD" className="hidden md:flex items-center gap-1 pl-4 border-l border-slate-200">
+        {/* Floating Dark Capsule Rail */}
+        <div className="flex-1 w-[56px] bg-[#2A040A] rounded-full py-5 flex flex-col items-center justify-between">
+          <nav className="flex flex-col items-center gap-3 w-full">
+            {isHrdAdmin ? (
+              <>
+                <RailTooltip label="Data Karyawan">
                   <button
                     type="button"
-                    onClick={() => setActiveTab('employees')}
-                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                    onClick={() => {
+                      setPendingQuickAdd(false);
+                      setActiveTab('employees');
+                    }}
+                    aria-label="Data Karyawan"
+                    className={`h-11 w-11 rounded-full inline-flex items-center justify-center transition-colors cursor-pointer ${
                       activeTab === 'employees'
-                        ? 'bg-slate-100 text-[#800020]'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                        ? 'bg-[#800020] text-white'
+                        : 'text-[#E7D8DC] hover:bg-white/10 hover:text-white'
                     }`}
                   >
-                    <Users className="w-3.5 h-3.5" />
-                    <span>Data Karyawan</span>
+                    <Users className="w-[19px] h-[19px]" />
                   </button>
+                </RailTooltip>
 
+                {/* Signature Notched Quick-Add Button */}
+                <div className="relative my-1 flex items-center justify-center w-full">
+                  <RailTooltip label="Tambah Karyawan Baru" offsetClass="left-full ml-6">
+                    <div className="bg-white p-1.5 rounded-full translate-x-3 shadow-xs">
+                      <button
+                        type="button"
+                        onClick={handleQuickAddEmployee}
+                        aria-label="Tambah Karyawan Baru"
+                        className="h-10 w-10 rounded-full bg-[#FBE8EC] hover:bg-[#F5CFD8] text-[#800020] inline-flex items-center justify-center transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-5 h-5 stroke-[2.5]" />
+                      </button>
+                    </div>
+                  </RailTooltip>
+                </div>
+
+                <RailTooltip label="Monitoring Absensi">
                   <button
                     type="button"
-                    onClick={() => setActiveTab('attendances')}
-                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                    onClick={() => {
+                      setPendingQuickAdd(false);
+                      setActiveTab('attendances');
+                    }}
+                    aria-label="Monitoring Absensi"
+                    className={`h-11 w-11 rounded-full inline-flex items-center justify-center transition-colors cursor-pointer ${
                       activeTab === 'attendances'
-                        ? 'bg-slate-100 text-[#800020]'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                        ? 'bg-[#800020] text-white'
+                        : 'text-[#E7D8DC] hover:bg-white/10 hover:text-white'
                     }`}
                   >
-                    <CalendarCheck2 className="w-3.5 h-3.5" />
-                    <span>Monitoring Absensi</span>
+                    <CalendarCheck2 className="w-[19px] h-[19px]" />
                   </button>
+                </RailTooltip>
 
+                <RailTooltip label="Presensi Mandiri">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingQuickAdd(false);
+                      setActiveTab('my-attendance');
+                    }}
+                    aria-label="Presensi Mandiri"
+                    className={`h-11 w-11 rounded-full inline-flex items-center justify-center transition-colors cursor-pointer ${
+                      activeTab === 'my-attendance'
+                        ? 'bg-[#800020] text-white'
+                        : 'text-[#E7D8DC] hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <ClipboardCheck className="w-[19px] h-[19px]" />
+                  </button>
+                </RailTooltip>
+              </>
+            ) : (
+              <>
+                <RailTooltip label="Presensi WFH">
                   <button
                     type="button"
                     onClick={() => setActiveTab('my-attendance')}
-                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                      activeTab === 'my-attendance'
-                        ? 'bg-slate-100 text-[#800020]'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                    }`}
+                    aria-label="Presensi WFH"
+                    className="h-11 w-11 rounded-full bg-[#800020] text-white inline-flex items-center justify-center cursor-pointer"
                   >
-                    <ClipboardCheck className="w-3.5 h-3.5" />
-                    <span>Presensi Mandiri</span>
+                    <ClipboardCheck className="w-[19px] h-[19px]" />
                   </button>
-                </nav>
-              )}
-            </div>
+                </RailTooltip>
 
-            {/* Right: Admin Profile & Actions */}
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2.5 text-right pl-3">
-                <div className="flex flex-col items-end leading-tight">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-slate-900 max-w-[160px] truncate">
-                      {displayName}
-                    </span>
-                    <span
-                      className={`inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold ${
-                        isHrdAdmin
-                          ? 'bg-[#800020]/10 text-[#800020] border border-[#800020]/20'
-                          : 'bg-slate-100 text-slate-700 border border-slate-200'
-                      }`}
-                    >
-                      {isHrdAdmin ? 'HRD Admin' : 'Karyawan'}
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-slate-500 font-mono">
-                    {user.employee?.employeeCode ?? user.email}
-                  </span>
+                <div className="relative my-1 flex items-center justify-center w-full">
+                  <RailTooltip label="Unggah Bukti WFH" offsetClass="left-full ml-6">
+                    <div className="bg-white p-1.5 rounded-full translate-x-3 shadow-xs">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const target = document.getElementById('attendance-upload-zone');
+                          target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }}
+                        aria-label="Unggah Bukti WFH"
+                        className="h-10 w-10 rounded-full bg-[#FBE8EC] hover:bg-[#F5CFD8] text-[#800020] inline-flex items-center justify-center transition-colors cursor-pointer"
+                      >
+                        <Upload className="w-4 h-4 stroke-[2.25]" />
+                      </button>
+                    </div>
+                  </RailTooltip>
                 </div>
+              </>
+            )}
+          </nav>
 
-                <div className="h-8 w-8 rounded-full bg-slate-100 border border-slate-200/90 flex items-center justify-center text-xs font-bold text-slate-700">
-                  {initials || <User className="w-4 h-4 text-slate-500" />}
-                </div>
+          {/* Bottom User Avatar & Logout */}
+          <div className="flex flex-col items-center gap-3">
+            <RailTooltip label={`${displayName} · ${isHrdAdmin ? 'HRD Admin' : 'Karyawan'}`}>
+              <div
+                tabIndex={0}
+                aria-label={`${displayName}, ${isHrdAdmin ? 'HRD Admin' : 'Karyawan'}`}
+                className="h-9 w-9 rounded-full bg-[#FBE8EC] text-[#800020] flex items-center justify-center text-xs font-bold select-none cursor-default"
+              >
+                {initials || <User className="w-4 h-4" />}
               </div>
+            </RailTooltip>
 
-              {/* Logout Button */}
+            <RailTooltip label="Keluar">
               <button
                 type="button"
                 onClick={handleLogout}
-                title="Keluar dari sesi"
-                className="inline-flex items-center gap-1.5 min-h-[34px] px-3 rounded-lg border border-slate-200 bg-white hover:bg-red-50 hover:border-red-200 hover:text-red-700 text-xs font-medium text-slate-600 transition-colors cursor-pointer shadow-2xs"
+                aria-label="Keluar dari akun"
+                className="h-10 w-10 rounded-full text-[#E7D8DC] hover:bg-white/10 hover:text-white inline-flex items-center justify-center transition-colors cursor-pointer"
               >
-                <LogOut className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Keluar</span>
+                <LogOut className="w-[18px] h-[18px]" />
               </button>
-            </div>
+            </RailTooltip>
+          </div>
+        </div>
+      </aside>
+
+      {/* MOBILE TOP HEADER */}
+      <header className="lg:hidden sticky top-0 z-40 bg-white border-b border-[#EFEAED] px-4 py-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="h-9 w-9 rounded-full bg-[#2A040A] flex items-center justify-center shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M6.5 9.5C6.5 8.11929 7.61929 7 9 7H14C16.2091 7 18 8.79086 18 11C18 12.1046 17.1046 13 16 13H9"
+                stroke="#FBE8EC"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+              />
+              <path
+                d="M17.5 14.5C17.5 15.8807 16.3807 17 15 17H10C7.79086 17 6 15.2091 6 13C6 11.8954 6.89543 11 8 11H15"
+                stroke="#DC2626"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-[#2A040A] leading-tight truncate">DEXAsync</p>
+            <p className="text-[11px] text-[#634E53] truncate">
+              {displayName} · {isHrdAdmin ? 'HRD Admin' : 'Karyawan'}
+            </p>
           </div>
         </div>
 
-        {/* Mobile Navigation Sub-bar */}
-        {isHrdAdmin && (
-          <div className="md:hidden border-t border-slate-200/80 bg-slate-50/50 px-4 py-1.5 flex items-center justify-around">
-            <button
-              type="button"
-              onClick={() => setActiveTab('employees')}
-              className={`flex-1 py-1.5 text-center text-xs font-semibold rounded-md transition-colors ${
-                activeTab === 'employees'
-                  ? 'bg-white text-[#800020] shadow-2xs'
-                  : 'text-slate-600'
-              }`}
-            >
-              Karyawan
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('attendances')}
-              className={`flex-1 py-1.5 text-center text-xs font-semibold rounded-md transition-colors ${
-                activeTab === 'attendances'
-                  ? 'bg-white text-[#800020] shadow-2xs'
-                  : 'text-slate-600'
-              }`}
-            >
-              Monitoring
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('my-attendance')}
-              className={`flex-1 py-1.5 text-center text-xs font-semibold rounded-md transition-colors ${
-                activeTab === 'my-attendance'
-                  ? 'bg-white text-[#800020] shadow-2xs'
-                  : 'text-slate-600'
-              }`}
-            >
-              Presensi
-            </button>
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={handleLogout}
+          aria-label="Keluar dari sesi"
+          className="min-h-[44px] px-3 rounded-full border border-[#E5DDE0] bg-white text-xs font-semibold text-[#2A040A] hover:bg-[#F7F4F5] inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+        >
+          <LogOut className="w-3.5 h-3.5 text-[#800020]" />
+          <span>Keluar</span>
+        </button>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* MAIN WORKSPACE */}
+      <main className="flex-1 min-w-0 lg:py-4 lg:pr-4 pb-24 lg:pb-4">
         {isHrdAdmin && (activeTab === 'employees' || activeTab === 'attendances') ? (
           <MonitoringSection
             user={user}
             mode={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={(tab) => {
+              setPendingQuickAdd(false);
+              setActiveTab(tab);
+            }}
             onPreviewPhoto={setPreviewPhotoUrl}
+            openQuickAdd={pendingQuickAdd}
+            onQuickAddConsumed={handleQuickAddConsumed}
           />
         ) : (
           <AttendanceSection user={user} onPreviewPhoto={setPreviewPhotoUrl} />
         )}
       </main>
+
+      {/* MOBILE BOTTOM FLOATING DARK PILL DOCK (HRD ADMIN) */}
+      {isHrdAdmin && (
+        <nav
+          aria-label="Navigasi Mobile HRD"
+          className="lg:hidden fixed bottom-3 inset-x-4 z-40 bg-[#2A040A] rounded-full px-3 py-1.5 flex items-center justify-around shadow-xl"
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setPendingQuickAdd(false);
+              setActiveTab('employees');
+            }}
+            aria-label="Data Karyawan"
+            className={`min-h-[44px] px-3.5 rounded-full inline-flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+              activeTab === 'employees' ? 'bg-[#800020] text-white' : 'text-[#E7D8DC]'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Karyawan</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleQuickAddEmployee}
+            aria-label="Tambah Karyawan Baru"
+            className="h-11 w-11 rounded-full bg-[#FBE8EC] text-[#800020] inline-flex items-center justify-center shrink-0 cursor-pointer"
+          >
+            <Plus className="w-5 h-5 stroke-[2.5]" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setPendingQuickAdd(false);
+              setActiveTab('attendances');
+            }}
+            aria-label="Monitoring Absensi"
+            className={`min-h-[44px] px-3.5 rounded-full inline-flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+              activeTab === 'attendances' ? 'bg-[#800020] text-white' : 'text-[#E7D8DC]'
+            }`}
+          >
+            <CalendarCheck2 className="w-4 h-4" />
+            <span>Absensi</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setPendingQuickAdd(false);
+              setActiveTab('my-attendance');
+            }}
+            aria-label="Presensi Mandiri"
+            className={`min-h-[44px] px-3.5 rounded-full inline-flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+              activeTab === 'my-attendance' ? 'bg-[#800020] text-white' : 'text-[#E7D8DC]'
+            }`}
+          >
+            <ClipboardCheck className="w-4 h-4" />
+          </button>
+        </nav>
+      )}
 
       {/* Photo Preview Modal */}
       <PhotoPreviewModal photoUrl={previewPhotoUrl} onClose={() => setPreviewPhotoUrl(null)} />
