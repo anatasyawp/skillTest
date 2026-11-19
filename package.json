@@ -9,6 +9,8 @@
     "prisma:migrate": "npm --prefix backend run prisma:migrate",
     "prisma:seed": "npm --prefix backend run prisma:seed",
     "prisma:studio": "npm --prefix backend run prisma:studio",
+    "db:seed": "npm --prefix backend run prisma:seed",
+    "db:setup": "npm run prisma:generate && npm run prisma:migrate && npm run prisma:seed",
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend/attendance-app run dev",
     "dev": "npx concurrently -n GATEWAY,AUTH,EMPLOYEE,ATTENDANCE,FRONTEND -c blue,green,yellow,magenta,cyan \"npm --prefix backend run start:gateway\" \"npm --prefix backend run start:auth\" \"npm --prefix backend run start:employee\" \"npm --prefix backend run start:attendance\" \"npm --prefix frontend/attendance-app run dev\""
